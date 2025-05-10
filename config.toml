@@ -24,5 +24,5 @@ highlight_code = true
 # Put all your custom variables here
 
 links = [
-    { title = "Mail", href = "mailto:elvime@proton.me" },
+    { title = "Mail", href = "mailto:#" },
 ]

@@ -23,4 +23,4 @@ The first time I deployed my own server was during my CS education and we were t
 Recently I deployed a Laravel app for a side-hustle and within 24 hours it was crawled by AI bots and scanned multiple times for misconfigurations by bots.  
 I've done my best to harden the app and encrypted the complete database. Sure some queries might take some extra miliseconds but it helps me sleep at night.  
 
- Do you trust the companies that store data about you?
+Do you trust the companies that store data about you?
