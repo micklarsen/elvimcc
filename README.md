@@ -1,2 +1,2 @@
 # micklarsen.github.io
-Yes, i've uploaded the source
+Yes, i've uploaded the source.
