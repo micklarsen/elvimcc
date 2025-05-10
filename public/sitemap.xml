@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>https://elvim.me/</loc>
+    </url>
+    <url>
+        <loc>https://elvim.me/about/</loc>
+    </url>
+    <url>
+        <loc>https://elvim.me/blog/</loc>
+    </url>
+    <url>
+        <loc>https://elvim.me/blog/hello-world/</loc>
+        <lastmod>2025-04-03</lastmod>
+    </url>
+    <url>
+        <loc>https://elvim.me/blog/name-of-the-game/</loc>
+        <lastmod>2025-04-05</lastmod>
+    </url>
+    <url>
+        <loc>https://elvim.me/categories/</loc>
+    </url>
+    <url>
+        <loc>https://elvim.me/categories/cyber-security/</loc>
+    </url>
+    <url>
+        <loc>https://elvim.me/categories/webdev/</loc>
+    </url>
+    <url>
+        <loc>https://elvim.me/tags/</loc>
+    </url>
+</urlset>
