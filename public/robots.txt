@@ -1,4 +1,4 @@
 User-agent: *
 Disallow:
 Allow: /
-Sitemap: https://micklarsen.github.io/sitemap.xml
+Sitemap: https://elvim.cc/sitemap.xml
