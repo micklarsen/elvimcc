@@ -1,7 +1,7 @@
 theme = "hook"
 
 # The URL the site will be built for
-base_url = "https://micklarsen.github.io"
+base_url = "https://elvim.cc"
 
 # Whether to automatically compile all Sass files in the sass directory
 compile_sass = true
