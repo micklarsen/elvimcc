@@ -2,6 +2,7 @@
 title = "Welcome to the internet. You're fucked"
 date = 2025-04-05
 taxonomies.categories = ["webdev", "Cyber security"]
+draft = true
 +++
 
 It’s a truth universally acknowledged that anything exposed to the internet carries risk—and most of us would be horrified to learn just how much. Seriously, if you knew how much of your personal data is floating around, you’d probably need new pants.
