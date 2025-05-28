@@ -1,6 +1,6 @@
 +++
 title = "Welcome to the internet. You're fucked"
-date = 2025-04-05
+date = 2025-04-04
 taxonomies.categories = ["webdev", "Cyber security"]
 draft = true
 +++
