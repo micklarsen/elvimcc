@@ -1,2 +1,2 @@
 # micklarsen.github.io
-Hi :)
+Hi! :)
