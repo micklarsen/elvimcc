@@ -1,7 +1,7 @@
 +++
 title = "Building your own LLM with Pyhton - Legal AI Assistant (Part 1: Tools and Setup)"
 date = 2025-09-20
-draft = false
+taxonomies.categories = ["LLM"]
 +++
 
 # Building a Legal AI Assistant with Python  

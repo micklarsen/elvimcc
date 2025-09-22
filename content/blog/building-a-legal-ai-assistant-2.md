@@ -1,9 +1,7 @@
 +++
 title = "Building your own LLM with Python - Legal AI Assistant (Part 2: Getting Answers)"
 date = 2025-09-21
-draft = false
-weight = 2
-series = "Legal AI Assistant"
+taxonomies.categories = ["LLM"]
 +++
 
 # Building a Legal AI Assistant with Python and Danish laws  
