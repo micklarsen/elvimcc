@@ -1,66 +1,31 @@
-name: Deploy Zola site to GitHub Pages
+name: Deploy Zola to GitHub Pages
 
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
 
-# Avoid overlapping deploys when you push quickly
-concurrency:
-  group: zola-pages
-  cancel-in-progress: true
-
-permissions:
-  contents: write  # needed to push to gh-pages
-  pages: write     # harmless even if not using Pages API
-  id-token: write  # harmless
-
-env:
-  # Optional: set your custom domain here to auto-create public/CNAME
-  # Leave empty if you don't use a custom domain.
-  CUSTOM_DOMAIN: elvim.cc
-
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo (with submodules pinned)
+      - name: Checkout (incl. submodules if you use a theme)
         uses: actions/checkout@v4
         with:
-          submodules: recursive   # respects your pinned submodule commit
-          fetch-depth: 0
+          submodules: recursive
 
-      - name: Install Zola
-        uses: taiki-e/install-action@v2
-        with:
-          tool: zola@v0.19.2      # pin a version for reproducible builds
+      - name: Build & Deploy
+        uses: shalzz/zola-deploy-action@master
+        env:
+          # Target branch for Pages
+          PAGES_BRANCH: gh-pages
 
-      # Optional: cache Zola output (can be skipped; Zola is fast)
-      # - name: Cache Zola .cache (optional)
-      #   uses: actions/cache@v4
-      #   with:
-      #     path: ./.zola-cache
-      #     key: zola-${{ runner.os }}-${{ hashFiles('**/*.md', '**/*.toml', '**/*.html', '**/*.tera', 'themes/**') }}
-      #     restore-keys: |
-      #       zola-${{ runner.os }}-
+          # Use GitHub's built-in token; no PAT needed
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build site
-        run: |
-          zola build --force
-          echo "Built files:"
-          ls -la public | sed 's/^/  /'
+          # Optional: if you have a custom domain, keep a CNAME file in /static
+          # The action will copy it into /public automatically.
+          # CUSTOM_DOMAIN: elvim.cc
 
-      - name: Add CNAME (optional)
-        if: env.CUSTOM_DOMAIN != ''
-        run: |
-          echo "${CUSTOM_DOMAIN}" > public/CNAME
-          echo "Using custom domain: ${CUSTOM_DOMAIN}"
-
-      - name: Deploy to gh-pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: gh-pages
-          publish_dir: ./public
-          # creates branch history from scratch; avoids weird merges
-          force_orphan: true
+          # Optional build flags (e.g., --force)
+          # BUILD_FLAGS: --force
