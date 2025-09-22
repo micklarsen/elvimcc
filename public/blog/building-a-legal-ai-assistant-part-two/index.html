@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title> | Building your own LLM with Python - Legal AI Assistant (Part 2: Getting Answers)</title>
+    
+  
+    <link rel="stylesheet" href="https://elvim.cc/style.css?h=501c6ea82db27d74ea03">
+    
+  <link rel="stylesheet" href="/css/custom.css">
+
+    
+        
+    
+</head>
+<body>
+    
+<header class="space">
+    <a href="https:&#x2F;&#x2F;elvim.cc">&LeftArrow; Home</a>
+</header>
+
+    
+<main>
+    <h1>Building your own LLM with Python - Legal AI Assistant (Part 2: Getting Answers)</h1>
+    
+    <p class="secondary small">
+        21 September, 2025
+
+        
+        
+        
+        
+        
+
+        
+        
+        - Categories:
+        
+        
+        <a href="https:&#x2F;&#x2F;elvim.cc&#x2F;categories&#x2F;llm&#x2F;">LLM</a>
+        
+        
+    </p>
+    
+    <div class="space"></div>
+    <h1 id="building-a-legal-ai-assistant-with-python-and-danish-laws">Building a Legal AI Assistant with Python and Danish laws</h1>
+<h3 id="part-2-getting-answers">Part 2: Getting Answers</h3>
+<blockquote>
+<p>⚠️ <strong>Disclaimer (read this before you hyperventilate about “AI”)</strong></p>
+<p>I am <em>not</em> an “AI influencer”, I don’t spend my days asking coding assistants to write my for-loops, and I am frankly nauseated by the hype train around this stuff.</p>
+<p>Every corporate pitch deck these days seems to think “AI” is a magic solution that must be applied to everything from <strong>paper clips to lotion</strong>. It’s not.</p>
+<p>This technology is still immature, it makes mistakes, and it’s not magic fairy dust. But — if you actually use your head while working with it — it <em>can</em> be a useful tool. That’s the spirit of this series: not hype, not marketing, but a practical experiment.</p>
+</blockquote>
+<hr />
+<h2 id="recap-from-part-1">Recap from Part 1</h2>
+<p>In <a href="../part-1-tools-and-setup/">Part 1</a>, we:</p>
+<ul>
+<li>Installed <strong>Ollama</strong> to run a language model locally.</li>
+<li>Installed <strong>Chroma</strong> to store and search text by meaning.</li>
+<li>Split the Danish Housing Act into clean, overlapping <strong>chunks</strong> for easier retrieval.</li>
+</ul>
+<p>Now it’s time to put it all together and actually <strong>ask questions</strong>.</p>
+<hr />
+<h2 id="step-1-ingesting-the-law-into-chroma">Step 1: Ingesting the Law into Chroma</h2>
+<p>The ingestion script (<code>ingest.py</code>) loads all our prepared <code>.md</code> files and adds them into a Chroma collection.</p>
+<p>Each chunk is stored with:</p>
+<ul>
+<li><strong>Text</strong> (the law paragraph or slice of it)</li>
+<li><strong>Metadata</strong>: source file, paragraph number (§), chapter, and chunk index</li>
+</ul>
+<p>This lets us later retrieve not only the text but also know <em>where it came from</em>.</p>
+<p>Example output when running <code>python ingest.py</code>:</p>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>
+</span><span>✅ Indekseret 147 tekst-chunks fra 131 filer i db/
+</span><span>
+</span></code></pre>
+<hr />
+<h2 id="step-2-asking-a-question">Step 2: Asking a Question</h2>
+<p>The <code>ask.py</code> script is where the magic happens:</p>
+<ol>
+<li>You type a question.</li>
+<li>It converts your question into an <strong>embedding</strong> (vector).</li>
+<li>Chroma finds the closest text chunks.</li>
+<li>We build a prompt like:</li>
+</ol>
+<pre style="background-color:#2b303b;color:#c0c5ce;"><code><span>
+</span><span>Here are relevant law texts:
+</span><span>
+</span><span>§85: \[chunk text...]
+</span><span>§86a: \[chunk text...]
+</span><span>
+</span><span>Answer the question using only these.
+</span><span>
+</span></code></pre>
+<ol start="5">
+<li>This is sent to <strong>Ollama</strong>, which generates a natural-language answer.</li>
+<li>The script shows both the <strong>answer</strong> and the <strong>cited sources</strong>.</li>
+</ol>
+<hr />
+<h2 id="example-1-rehousing">Example 1: Rehousing</h2>
+<p><strong>Question:</strong></p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">python</span><span> ask.py &quot;</span><span style="color:#a3be8c;">If a tenant must be rehoused, what type of replacement housing must be provided?</span><span>&quot;
+</span></code></pre>
+<p><strong>Answer (summarized from §85 and §86a):</strong></p>
+<ul>
+<li><strong>Temporary housing</strong> must be suitable, usually in the same municipality (can be a hotel or similar).</li>
+<li><strong>Permanent housing</strong> must have appropriate size, location, and facilities.</li>
+<li>The landlord must cover reasonable moving costs.</li>
+</ul>
+<p><strong>Cited sources:</strong></p>
+<ul>
+<li>§085.md</li>
+<li>§086a.md</li>
+</ul>
+<hr />
+<h2 id="example-2-a-failure-case">Example 2: A Failure Case</h2>
+<p>Not every question works perfectly.</p>
+<p><strong>Question:</strong></p>
+<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">python</span><span> ask.py &quot;</span><span style="color:#a3be8c;">Can my landlord paint my living room pink without asking me?</span><span>&quot;
+</span></code></pre>
+<p><strong>Answer:</strong>
+The model will probably say something <em>plausible</em> about maintenance rules or landlord obligations — but it may not cite the exact relevant law.</p>
+<p>This shows the limits: if your question doesn’t map cleanly to how the law is written, retrieval can miss the right chunk.</p>
+<hr />
+<h2 id="why-this-works">Why This Works</h2>
+<p>This approach is called <strong>RAG (Retrieval-Augmented Generation)</strong>.</p>
+<ul>
+<li>Instead of asking the LLM to “know” Danish housing law (it doesn’t), we <strong>ground</strong> it in the actual text.</li>
+<li>Chroma retrieves the most relevant paragraphs.</li>
+<li>Ollama just rephrases those paragraphs into a human-friendly answer.</li>
+</ul>
+<p>The assistant isn’t a lawyer — but it saves you from digging through 100 pages of legalese to find §86a.</p>
+<hr />
+<h2 id="reflections">Reflections</h2>
+<ul>
+<li><strong>Transparency</strong>: Every answer includes citations.</li>
+<li><strong>Not magic</strong>: If the retrieval step fails, the answer can drift.</li>
+<li><strong>Reusable pattern</strong>: You can replace the law with manuals, policies, or any other big text corpus.</li>
+</ul>
+<hr />
+<h2 id="what-s-next">What’s Next?</h2>
+<p>Right now, we have a working CLI assistant. Next steps could be:</p>
+<ul>
+<li>Wrapping this in a <strong>FastAPI</strong> or <strong>Flask</strong> web app.</li>
+<li>Adding a search interface with highlighting.</li>
+<li>Expanding with more laws → building a small searchable <strong>legal AI library</strong>.</li>
+</ul>
+<hr />
+<h2 id="final-thoughts">Final Thoughts</h2>
+<p>With less than 200 lines of Python, we built a system that:</p>
+<ul>
+<li>Splits and cleans a law text.</li>
+<li>Stores it in a vector database.</li>
+<li>Retrieves the right chunks for a question.</li>
+<li>Uses an LLM to explain the result with citations.</li>
+</ul>
+<p>It’s not perfect and it's certainly not magic. But it can be <strong>useful</strong>.<br />
+And in my book, that beats AI-hype slides about “machine learning for milk cartons” any day 🍺.</p>
+
+</main>
+
+    <div class="dark-mode-buttons">
+        <button class="dark-mode-button" id="dark-mode-on"><img src="https://elvim.cc/dark_mode.svg" width="24" height="24" alt="Dark mode" aria-label="dark mode toggle" title="Dark mode"></button>
+        <button class="dark-mode-button" id="dark-mode-off"><img src="https://elvim.cc/light_mode.svg" width="24" height="24" alt="Light mode" aria-label="light mode toggle" title="Light mode"></button>
+    </div>
+    <script>
+        const cls = document.querySelector("html").classList;
+        const sessionTheme = sessionStorage.getItem("theme");
+
+        function setDark() {
+            cls.add("dark-mode");
+            cls.remove("light-mode");
+            sessionStorage.setItem("theme", "dark");
+        }
+        function setLight() {
+            cls.add("light-mode");
+            cls.remove("dark-mode");
+            sessionStorage.setItem("theme", "light");
+        }
+
+        if (sessionTheme === "dark") {
+            setDark();
+        } else if (sessionTheme === "light") {
+            setLight();
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            setDark();
+        }
+
+        document.getElementById("dark-mode-on").addEventListener("click", function(e) {
+            setDark();
+        });
+        document.getElementById("dark-mode-off").addEventListener("click", function(e) {
+            setLight();
+        });
+    </script>
+    <noscript>
+        <style>
+            .dark-mode-buttons {
+                display: none;
+            }
+        </style>
+    </noscript>
+</body>
+</html>

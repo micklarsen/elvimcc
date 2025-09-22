@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title> | How to create a network protocol with Scapy</title>
+    
+  
+    <link rel="stylesheet" href="https://elvim.cc/style.css?h=501c6ea82db27d74ea03">
+    
+  <link rel="stylesheet" href="/css/custom.css">
+
+    
+        
+    
+</head>
+<body>
+    
+<header class="space">
+    <a href="https:&#x2F;&#x2F;elvim.cc">&LeftArrow; Home</a>
+</header>
+
+    
+<main>
+    <h1>How to create a network protocol with Scapy</h1>
+    
+    <p class="secondary small">
+        11 May, 2025
+
+        
+        
+        
+        
+        
+
+        
+        
+        - Categories:
+        
+        
+        <a href="https:&#x2F;&#x2F;elvim.cc&#x2F;categories&#x2F;networking&#x2F;">networking</a>
+        
+        
+    </p>
+    
+    <div class="space"></div>
+    <p>I was working on a project that required me to implement my own network protocol. At first it seemed incredibly complicated, but it's really not <em>too</em> bad. Fortunately, tools like <a href="https://scapy.net/">Scapy</a> exist and the documentation is pretty good. This time around I wanted to jot down an example, mostly for my own notes. So today we are making a new network protocol called "Elvims Super Cool Protocol" or "ESCP"</p>
+<h2 id="mapping-protocols-to-network-layers">Mapping Protocols to Network Layers</h2>
+<p>Before diving into ESCP, let’s quickly recap the four layers of the TCP/IP network stack:</p>
+<table><thead><tr><th>TCP/IP Layer</th><th>Layer Number</th><th>Also Known As</th><th>What it does</th></tr></thead><tbody>
+<tr><td>Link</td><td>1</td><td>Network Access</td><td>Frames bits onto physical media (Ethernet, Wi‑Fi)</td></tr>
+<tr><td>Internet</td><td>2</td><td>Network</td><td>Routes IP packets between networks (IPv4/IPv6)</td></tr>
+<tr><td>Transport</td><td>3</td><td>Host-to-Host</td><td>End-to-end delivery (TCP, UDP)</td></tr>
+<tr><td>Application</td><td>4</td><td>Application</td><td>High-level protocols (HTTP, DNS, SMTP, custom apps)</td></tr>
+</tbody></table>
+<p>In the simpler TCP/IP view, there are effectively no separate session or presentation layers—those concerns are absorbed into application protocols or libraries.</p>
+<h2 id="creating-a-layer-4-5-protocol">Creating a "layer 4.5" protocol</h2>
+<p>I'm refering to the TCP/IP network stack in the table above, but in the full OSI model, the transport layer sits in layer 4. Our <strong>ESCP</strong> protocol sits just above UDP (transport) but beneath any true application‑layer. Because of this, we could call it a “layer 4.5” protocol:</p>
+<ul>
+<li><strong>Layer 4 (Transport)</strong>: UDP delivers our datagrams reliably (sort of).</li>
+<li><strong>Our ESCP framing</strong>: Defines a fixed‐bit header (sync, version, flags, cmd) and a raw payload blob.</li>
+</ul>
+<p>Because ESCP only specifies <strong>how</strong> bytes are laid out and not <strong>what</strong> they mean in terms of user‑level operations, it remains a framing layer rather than a full application protocol. This is different from application layer protocols like HTTP that defines methods like GET, POST, Status codes etc. Our protocol only handles the framing of the bits and fields over UDP without specifying any request/response structures.</p>
+<blockquote>
+<p>This might sound overly complex, but it's not that important. Just keep in mind that we aren't implementing a full application layer protocol like HTTP. We are basically shooting packets to some reciever and letting them worry about how to handle them.</p>
+</blockquote>
+<hr />
+<h2 id="escp-in-scapy-code-example">ESCP in Scapy: Code Example</h2>
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#65737e;">#!/usr/bin/env python3
+</span><span style="color:#b48ead;">from </span><span>scapy.all </span><span style="color:#b48ead;">import </span><span>IPv6, </span><span style="color:#bf616a;">UDP</span><span>, wrpcap
+</span><span style="color:#b48ead;">from </span><span>scapy.all </span><span style="color:#b48ead;">import </span><span>BitField, StrFixedLenField, Packet, bind_layers
+</span><span>
+</span><span style="color:#65737e;"># Out protocol
+</span><span style="color:#b48ead;">class </span><span style="color:#ebcb8b;">ESCP</span><span style="color:#eff1f5;">(</span><span style="color:#a3be8c;">Packet</span><span style="color:#eff1f5;">):
+</span><span>    name = &quot;</span><span style="color:#a3be8c;">ESCP</span><span>&quot;
+</span><span>    fields_desc = [
+</span><span>        </span><span style="color:#bf616a;">BitField</span><span>(&quot;</span><span style="color:#a3be8c;">sync</span><span>&quot;, </span><span style="color:#d08770;">0b10101</span><span>, </span><span style="color:#d08770;">5</span><span>),
+</span><span>        </span><span style="color:#bf616a;">BitField</span><span>(&quot;</span><span style="color:#a3be8c;">ver</span><span>&quot;, </span><span style="color:#d08770;">0b0011</span><span>, </span><span style="color:#d08770;">4</span><span>),
+</span><span>        </span><span style="color:#bf616a;">BitField</span><span>(&quot;</span><span style="color:#a3be8c;">flags</span><span>&quot;, </span><span style="color:#d08770;">0b00</span><span>, </span><span style="color:#d08770;">2</span><span>),
+</span><span>        </span><span style="color:#bf616a;">BitField</span><span>(&quot;</span><span style="color:#a3be8c;">cmd</span><span>&quot;, </span><span style="color:#d08770;">0b00010</span><span>, </span><span style="color:#d08770;">5</span><span>),
+</span><span>        </span><span style="color:#bf616a;">StrFixedLenField</span><span>(&quot;</span><span style="color:#a3be8c;">msg</span><span>&quot;, </span><span style="color:#b48ead;">b</span><span>&quot;</span><span style="color:#a3be8c;">Never gonna let you down</span><span>&quot;.</span><span style="color:#bf616a;">ljust</span><span>(</span><span style="color:#d08770;">62</span><span>, </span><span style="color:#b48ead;">b</span><span>&quot;</span><span style="color:#96b5b4;">\x00</span><span>&quot;), </span><span style="color:#bf616a;">length</span><span>=</span><span style="color:#d08770;">62</span><span>)
+</span><span>    ]
+</span><span>
+</span><span style="color:#bf616a;">bind_layers</span><span>(</span><span style="color:#bf616a;">UDP</span><span>, </span><span style="color:#bf616a;">ESCP</span><span>, </span><span style="color:#bf616a;">dport</span><span>=</span><span style="color:#d08770;">1337</span><span>)
+</span><span>
+</span><span style="color:#65737e;"># Craft a few example packets
+</span><span>packets = []
+</span><span style="color:#b48ead;">for </span><span>i </span><span style="color:#b48ead;">in </span><span style="color:#96b5b4;">range</span><span>(</span><span style="color:#d08770;">3</span><span>):
+</span><span>    pkt = (
+</span><span>        </span><span style="color:#bf616a;">IPv6</span><span>(</span><span style="color:#bf616a;">dst</span><span>=&quot;</span><span style="color:#a3be8c;">::1</span><span>&quot;) /
+</span><span>        </span><span style="color:#bf616a;">UDP</span><span>(</span><span style="color:#bf616a;">sport</span><span>=</span><span style="color:#d08770;">40000 </span><span>+ i, </span><span style="color:#bf616a;">dport</span><span>=</span><span style="color:#d08770;">1337</span><span>) /
+</span><span>        </span><span style="color:#bf616a;">ESCP</span><span>(</span><span style="color:#bf616a;">cmd</span><span>=i)
+</span><span>    )
+</span><span>    packets.</span><span style="color:#bf616a;">append</span><span>(pkt)
+</span><span>
+</span><span style="color:#65737e;"># Write them all into a pcap file
+</span><span style="color:#bf616a;">wrpcap</span><span>(&quot;</span><span style="color:#a3be8c;">escp_test.pcap</span><span>&quot;, packets)
+</span><span style="color:#96b5b4;">print</span><span>(&quot;</span><span style="color:#a3be8c;">Written escp_test.pcap with</span><span>&quot;, </span><span style="color:#96b5b4;">len</span><span>(packets), &quot;</span><span style="color:#a3be8c;">packets</span><span>&quot;)
+</span></code></pre>
+<h3 id="key-points">Key Points</h3>
+<ol>
+<li><strong><code>BitField</code></strong> definitions mirror our bit‑widths: 5 sync + 4 version + 2 flags + 5 cmd = 16 bits of header.</li>
+<li><strong><code>StrFixedLenField</code></strong> ensures a consistent 62‑byte payload; we pad our fun message with <code>\x00</code>.</li>
+<li><strong><code>bind_layers(UDP, ESCP, dport=1337)</code></strong> tells Scapy to decode incoming UDP packets on port 1337 as ESCP frames.</li>
+</ol>
+<hr />
+<h2 id="checking-it-out-in-wireshark">Checking it out in WireShark.</h2>
+<p>When we run the script it saves a *.pcap that we can inspect in WireShark.</p>
+<p><img src="/images/scapy_example.png" alt="img" /></p>
+<p>And just like that we've written our own protocol! Now it's up to you to do something with it:</p>
+<ul>
+<li>Create a new protocol for your own purposes</li>
+<li>Use it for CTFs</li>
+<li>Clone or mimic other packages for research purposes</li>
+</ul>
+<p><em>Happy packet crafting!</em> 🍺</p>
+
+</main>
+
+    <div class="dark-mode-buttons">
+        <button class="dark-mode-button" id="dark-mode-on"><img src="https://elvim.cc/dark_mode.svg" width="24" height="24" alt="Dark mode" aria-label="dark mode toggle" title="Dark mode"></button>
+        <button class="dark-mode-button" id="dark-mode-off"><img src="https://elvim.cc/light_mode.svg" width="24" height="24" alt="Light mode" aria-label="light mode toggle" title="Light mode"></button>
+    </div>
+    <script>
+        const cls = document.querySelector("html").classList;
+        const sessionTheme = sessionStorage.getItem("theme");
+
+        function setDark() {
+            cls.add("dark-mode");
+            cls.remove("light-mode");
+            sessionStorage.setItem("theme", "dark");
+        }
+        function setLight() {
+            cls.add("light-mode");
+            cls.remove("dark-mode");
+            sessionStorage.setItem("theme", "light");
+        }
+
+        if (sessionTheme === "dark") {
+            setDark();
+        } else if (sessionTheme === "light") {
+            setLight();
+        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            setDark();
+        }
+
+        document.getElementById("dark-mode-on").addEventListener("click", function(e) {
+            setDark();
+        });
+        document.getElementById("dark-mode-off").addEventListener("click", function(e) {
+            setLight();
+        });
+    </script>
+    <noscript>
+        <style>
+            .dark-mode-buttons {
+                display: none;
+            }
+        </style>
+    </noscript>
+</body>
+</html>
