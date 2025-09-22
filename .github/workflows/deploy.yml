@@ -5,6 +5,10 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# 👇 THIS is the bit you were missing
+permissions:
+  contents: write   # allow pushing to gh-pages
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -17,15 +21,7 @@ jobs:
       - name: Build & Deploy
         uses: shalzz/zola-deploy-action@master
         env:
-          # Target branch for Pages
           PAGES_BRANCH: gh-pages
-
-          # Use GitHub's built-in token; no PAT needed
-          TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-          # Optional: if you have a custom domain, keep a CNAME file in /static
-          # The action will copy it into /public automatically.
-          # CUSTOM_DOMAIN: elvim.cc
-
-          # Optional build flags (e.g., --force)
-          # BUILD_FLAGS: --force
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}   # built-in token, now with write perms
+          # BUILD_FLAGS: --force               # optional
+          # CUSTOM_DOMAIN: elvim.cc            # optional; or keep a /static/CNAME file
