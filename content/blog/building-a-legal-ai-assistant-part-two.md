@@ -1,6 +1,7 @@
 +++
 title = "Building your own LLM with Python - Legal AI Assistant (Part 2: Getting Answers)"
 date = 2025-09-21
+draft = false
 taxonomies.categories = ["LLM"]
 +++
 
