@@ -1,24 +1,27 @@
 +++
-title = "Building your own LLM with Pyhton - Legal AI Assistant (Part 1: Tools and Setup)"
-date = 2025-09-20
+title = "Building your own LLM & RAG with Python (# 1: Tools and Setup)"
+date = 2025-08-20
 draft = false
 taxonomies.categories = ["LLM"]
 +++
 
-# Building a Legal AI Assistant with Python  
+# Building an AI Assistant with Python
 
 > ⚠️ **Disclaimer (read this before you hyperventilate about “AI”)**  
 >  
-> I am *not* an “AI influencer”, I don’t spend my days asking coding assistants to write my for-loops, and I am frankly nauseated by the hype train around this stuff.  
+> I am *not* an “AI influencer” and I don’t spend my days asking coding assistants to write my for-loops.  
+> I am frankly nauseated by the hype train around this stuff.  
 >  
-> Every corporate pitch deck these days seems to think “AI” is a magic solution that must be applied to everything from **paper clips to lotion**. It’s not.  
+> Every corporate pitch deck these days seems to think “AI” is a magic solution that must be applied to everything from paper clips to lotion. It’s really not.  
 >  
-> This technology is still immature, it makes mistakes, and it’s not magic fairy dust. But — if you actually use your head while working with it — it *can* be a useful tool. That’s the spirit of this series: not hype, not marketing, but a practical experiment.  
+> This technology is still immature, it makes mistakes, and it’s not magic fairy dust. As long as you use common sense while using LLM's thare are a useful tool. 
+>
+> That’s the spirit of this series: not hype, not marketing, but a practical experiment.  
 
 
 ### Part 1: Tools and Setup
 
-This is part one of a two-part series where I document how I built a small **AI-powered assistant** for the Danish *Almenlejeloven* (Housing Act). You can use these technologies for building RAGs for anything of course.  
+I will document how I built a small *AI-powered assistant* for the Danish *Almenlejeloven* (Housing Act). You can use these technologies for building RAGs for anything of course.  
 
 - **Part 1** (this post): Introduces the tools and how to prepare the data.  
 - **Part 2**: Shows how to connect everything into a working Retrieval-Augmented Generation (RAG) system.  
@@ -27,10 +30,10 @@ This is part one of a two-part series where I document how I built a small **AI-
 
 ## Why Build This?
 
-Large Language Models (LLMs) like ChatGPT are powerful, but they have two issues when you want to use them with **your own documents**:
+Large Language Models (LLMs) like ChatGPT are powerful, but they have two issues when you want to use them with your own documents:
 
 1. **They don’t know your data** – unless it was in their training set, they won’t have access to your exact law, manual, or policy.  
-2. **They can hallucinate** – making up answers that sound correct but aren’t.<sup>1</sup>
+2. **They can hallucinate** – making up answers that sound correct but aren’t.<sup>Also, stop calling it "Hallucinate"</sup>
 
 To solve this, we need two things:  
 - A way to **store and search our own text data** by meaning.  
@@ -73,6 +76,8 @@ print(resp.json()["message"]["content"])
 # -> "The capital of Denmark is Copenhagen."
 ````
 
+I have an Nvidia GPU in my machine which let's me utilize CUDA - this speeds up things greatly compared to running an LLM on your CPU. YMMV.
+
 ---
 
 ## What is Chroma?
@@ -99,7 +104,7 @@ emb_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
 # Create collection
 coll = client.get_or_create_collection(name="laws", embedding_function=emb_fn)
 
-# Add some documents
+# Add some documents (Paraphrased for brevity)
 coll.add(
     documents=[
         "§ 86a: Temporary replacement housing must be suitable and in the same municipality.",
@@ -118,20 +123,24 @@ print(res["documents"])
 
 ## Preparing the Danish Housing Act (Markdown → Chunks)
 
-The Danish Housing Act is available online and can be exported to Markdown format. But the raw file is **too big** and messy for our use. We need to:
+The Danish Housing Act is available online and can be exported to Markdown format (You can google sites that convert website content to Markdown). I copied the entire Housing act as markdown and saved it into a file this way. 
+However, that file contains way to much text and is too messy for our use. We will need to:
 
-1. **Split by § (sections)**
+1. **Split by § (sections)**  
    Each paragraph (§1, §2, §3 …) becomes its own file.
-2. **Clean up Markdown**
-   Remove links, images, ads, and keep only the text.
-3. **Chunk the text**
-   Long sections are further split into \~1200-character chunks. This is important because:
 
+2. **Clean up Markdown**  
+   Remove links, images, ads, and keep only the text.  
+
+3. **Chunk the text**  
+   Long sections are further split into \~1200-character chunks. This is important because:
    * LLMs have context size limits.
    * Smaller chunks improve retrieval accuracy.
    * Overlap between chunks prevents losing context between cuts.
 
-Example chunking function in Python:
+
+For this project we can write some code that helps us split up our "Raw" data.  
+Here's an example chunking function in Python:
 
 ```python
 import re
@@ -179,23 +188,10 @@ def chunk_text(text, max_chars=1200, overlap=150):
 
 ## Diagram: How It Fits Together
 
-Here’s a simple flow of the system we’re building:
+So far we have produced markdown of the complete housing act. We've then split it up into chunks. Next up we will need to ingest this data into our vector database. When our database is populated we can start work on retrieving data with our LLM. Here’s a simple flow of the system we’re building:
 
 ![img](/images/llm-mermaid.png)
 
----
-
-## "What about 'Markov Chains' - are we using that?"
-
-Older text generation methods like **Markov chains** only look at the probability of one word following another (Or several using ngrams). They can generate funny sentences, but they have no true understanding of meaning.
-
-LLMs, by contrast:
-
-* Encode meaning in embeddings.
-* Handle long-range dependencies.
-* Can answer questions based on provided context.
-
-So while a Markov chain might generate “The tenant pays rent daily,” only an LLM with context from §86a can generate a correct answer about rehousing obligations.
 
 ---
 
@@ -209,4 +205,4 @@ In **Part 2**, we’ll connect the dots:
 
 This turns the raw Housing Act into a **mini legal AI assistant** you can run on your own machine.
 
-><sup>1</sup> I hate the term **“hallucinate”** here. Models aren’t taking LSD and seeing pink elephants — they’re just **wrong**. Call it “fabricating”, “lying”, or “predicting nonsense if you squint too hard”. Anything but hallucinating.  
+><sup>1</sup> I hate the term **“hallucinate”** here. Models aren’t taking LSD and seeing pink elephants — they’re just **wrong**. Call it “fabricating”, “lying”, or “predicting nonsense if you squint too hard”. 🔗 [Anything but hallucinating](https://blog.scottlogic.com/2024/09/10/llms-dont-hallucinate.html).

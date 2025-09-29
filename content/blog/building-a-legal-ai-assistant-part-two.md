@@ -1,62 +1,112 @@
 +++
-title = "Building your own LLM with Python - Legal AI Assistant (Part 2: Getting Answers)"
-date = 2025-09-21
+title = "Building your own LLM & RAG with Python (# 2: Getting Answers)"
+date = 2025-08-21
 draft = false
 taxonomies.categories = ["LLM"]
 +++
 
-# Building a Legal AI Assistant with Python and Danish laws  
+# Building an AI Assistant with Python
+
 ### Part 2: Getting Answers
-
-> ⚠️ **Disclaimer (read this before you hyperventilate about “AI”)**  
->  
-> I am *not* an “AI influencer”, I don’t spend my days asking coding assistants to write my for-loops, and I am frankly nauseated by the hype train around this stuff.  
->  
-> Every corporate pitch deck these days seems to think “AI” is a magic solution that must be applied to everything from **paper clips to lotion**. It’s not.  
->  
-> This technology is still immature, it makes mistakes, and it’s not magic fairy dust. But — if you actually use your head while working with it — it *can* be a useful tool. That’s the spirit of this series: not hype, not marketing, but a practical experiment.  
-
----
-
-## Recap from Part 1
 
 In [Part 1](../part-1-tools-and-setup/), we:  
 
-- Installed **Ollama** to run a language model locally.  
-- Installed **Chroma** to store and search text by meaning.  
+- Installed Ollama to run a language model locally.  
+- Installed Chroma to store and search text by meaning.  
 - Split the Danish Housing Act into clean, overlapping **chunks** for easier retrieval.  
 
-Now it’s time to put it all together and actually **ask questions**.  
+Now it’s time to put it all together and actually ask questions.
 
 ---
 
 ## Step 1: Ingesting the Law into Chroma
 
+To populate our vector database we will need some code that can ingest all the chunks of markdown we produced in the last post.
 The ingestion script (`ingest.py`) loads all our prepared `.md` files and adds them into a Chroma collection.  
 
-Each chunk is stored with:  
+Remember, that each chunk is stored with:  
 
 - **Text** (the law paragraph or slice of it)  
 - **Metadata**: source file, paragraph number (§), chapter, and chunk index  
 
 This lets us later retrieve not only the text but also know *where it came from*.  
 
-Example output when running `python ingest.py`:
+An example of ingesting code could be like this: 
+
+``` python
+#!/usr/bin/env python3
+
+import os
+from pathlib import Path
+import chromadb
+from chromadb.config import Settings
+from chromadb.utils import embedding_functions
+
+DATA_DIR = Path("data")          # your pre-chunked files live here
+DB_DIR = Path("db")              # where Chroma stores data
+COLLECTION = "almenlejelov"      # change as you like
+
+# Optional: quiet telemetry (I hate getting nonsense warnings in my terminal - tweak as you like)
+os.environ["CHROMADB_DISABLE_TELEMETRY"] = "1"
+os.environ["CHROMA_TELEMETRY_ENABLED"] = "false"
+os.environ["ANONYMIZED_TELEMETRY"] = "false"
+
+# A multilingual model that handles non-english languages
+EMB_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
+emb = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=EMB_MODEL)
+
+def main():
+    if not DATA_DIR.exists():
+        raise SystemExit(f"Missing data directory: {DATA_DIR.resolve()}")
+
+    # Spin up (persistent) Chroma client and collection
+    client = chromadb.PersistentClient(path=str(DB_DIR), settings=Settings(anonymized_telemetry=False))
+    coll = client.get_or_create_collection(name=COLLECTION, embedding_function=emb, metadata={"hnsw:space": "cosine"})
+
+    # Collect docs
+    docs, ids, metas = [], [], []
+    for i, p in enumerate(sorted(DATA_DIR.rglob("*.*")), start=1):
+        if p.suffix.lower() not in {".md", ".txt"} or not p.is_file():
+            continue
+        text = p.read_text(encoding="utf-8", errors="ignore").strip()
+        if not text:
+            continue
+
+        # Use a stable, readable id: relative path + index
+        rid = f"{p.relative_to(DATA_DIR)}::{i}"
+        docs.append(text)
+        ids.append(rid)
+        metas.append({"source": str(p.relative_to(DATA_DIR))})
+
+    if not docs:
+        raise SystemExit("No .md/.txt files found under ./data")
+
+    # Write to Chroma
+    coll.add(ids=ids, documents=docs, metadatas=metas)
+    print(f"✅ Ingested {len(docs)} chunks into '{COLLECTION}' at '{DB_DIR}/'")
+    print(f"   Embeddings: {EMB_MODEL}")
+
+if __name__ == "__main__":
+    main()
 
 ```
 
-✅ Indekseret 147 tekst-chunks fra 131 filer i db/
+Now, when we run our script, we should hopefully see something like:  
+
+```
+$ python ingest.py
+✅ Ingested 147 chunks into almenlejelov at db/
 
 ```
 
 ---
 
 ## Step 2: Asking a Question
-
-The `ask.py` script is where the magic happens:  
+We have now populated our vector database and need to be able to interact with it. This is there the LLM comes into play. 
+let's make a script for asking questions - `ask.py`. The idea is:  
 
 1. You type a question.  
-2. It converts your question into an **embedding** (vector).  
+2. It converts your question into an *embedding* (vector).  
 3. Chroma finds the closest text chunks.  
 4. We build a prompt like:  
 
@@ -74,27 +124,72 @@ Answer the question using only these.
 5. This is sent to **Ollama**, which generates a natural-language answer.  
 6. The script shows both the **answer** and the **cited sources**.  
 
+An example script for asking could be like this: 
+
+```python
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import os
+import sys
+import chromadb
+from chromadb.config import Settings
+from chromadb.utils import embedding_functions
+
+DB_DIR = "db"                   # same dir as used during ingest
+COLLECTION = "almenlejelov"     # must match the ingest script
+
+# turn off telemetry for clarity (Like in the ingest.py code)
+os.environ["CHROMADB_DISABLE_TELEMETRY"] = "1"
+os.environ["CHROMA_TELEMETRY_ENABLED"] = "false"
+os.environ["ANONYMIZED_TELEMETRY"] = "false"
+
+# same embedding model as ingest
+EMB_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
+emb = embedding_functions.SentenceTransformerEmbeddingFunction(model_name=EMB_MODEL)
+
+def ask(query: str, k: int = 5):
+    client = chromadb.PersistentClient(path=DB_DIR, settings=Settings(anonymized_telemetry=False))
+    coll = client.get_or_create_collection(name=COLLECTION, embedding_function=emb)
+    res = coll.query(query_texts=[query], n_results=k)
+
+    docs = res.get("documents", [[]])[0]
+    metas = res.get("metadatas", [[]])[0]
+
+    print(f"🔎 Query: {query}\n")
+    for i, (doc, meta) in enumerate(zip(docs, metas), start=1):
+        print(f"[{i}] {meta.get('source', '?')}")
+        # show first ~200 chars only
+        print(doc[:200].replace("\n", " ") + "...\n")
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python ask_minimal.py 'your question'")
+        sys.exit(1)
+
+    ask(sys.argv[1])
+
+```
 ---
 
 ## Example 1: Rehousing
 
-**Question:**  
+A question might look like this:  
+
+``` bash
+python ask_minimal.py "Hvad siger § 85 om genhusning?"
+```
+
+And the answer: 
 
 ```bash
-python ask.py "If a tenant must be rehoused, what type of replacement housing must be provided?"
-````
+[1] kapitel-10/§085/chunk-001.md
+Lejeren har krav på en erstatningsbolig, hvis udlejeren opsiger lejemålet på grund af større ombygning...
 
-**Answer (summarized from §85 and §86a):**
+[2] kapitel-10/§086/chunk-001.md
+Kommunalbestyrelsen kan i særlige tilfælde...
 
-* **Temporary housing** must be suitable, usually in the same municipality (can be a hotel or similar).
-* **Permanent housing** must have appropriate size, location, and facilities.
-* The landlord must cover reasonable moving costs.
-
-**Cited sources:**
-
-* §085.md
-* §086a.md
-
+```
 ---
 
 ## Example 2: A Failure Case
@@ -146,7 +241,7 @@ Right now, we have a working CLI assistant. Next steps could be:
 
 ## Final Thoughts
 
-With less than 200 lines of Python, we built a system that:
+Without using thousands of lines of Python, we built a system that:
 
 * Splits and cleans a law text.
 * Stores it in a vector database.

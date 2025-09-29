@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="">
-    <title> | Building your own LLM with Pyhton - Legal AI Assistant (Part 1: Tools and Setup)</title>
+    <title> | Building your own LLM &amp; RAG with Python (# 1: Tools and Setup)</title>
     
   
     <link rel="stylesheet" href="https://elvim.cc/style.css?h=501c6ea82db27d74ea03">
@@ -23,10 +23,10 @@
 
     
 <main>
-    <h1>Building your own LLM with Pyhton - Legal AI Assistant (Part 1: Tools and Setup)</h1>
+    <h1>Building your own LLM &amp; RAG with Python (# 1: Tools and Setup)</h1>
     
     <p class="secondary small">
-        20 September, 2025
+        20 August, 2025
 
         
         
@@ -45,25 +45,27 @@
     </p>
     
     <div class="space"></div>
-    <h1 id="building-a-legal-ai-assistant-with-python">Building a Legal AI Assistant with Python</h1>
+    <h1 id="building-an-ai-assistant-with-python">Building an AI Assistant with Python</h1>
 <blockquote>
 <p>⚠️ <strong>Disclaimer (read this before you hyperventilate about “AI”)</strong></p>
-<p>I am <em>not</em> an “AI influencer”, I don’t spend my days asking coding assistants to write my for-loops, and I am frankly nauseated by the hype train around this stuff.</p>
-<p>Every corporate pitch deck these days seems to think “AI” is a magic solution that must be applied to everything from <strong>paper clips to lotion</strong>. It’s not.</p>
-<p>This technology is still immature, it makes mistakes, and it’s not magic fairy dust. But — if you actually use your head while working with it — it <em>can</em> be a useful tool. That’s the spirit of this series: not hype, not marketing, but a practical experiment.</p>
+<p>I am <em>not</em> an “AI influencer” and I don’t spend my days asking coding assistants to write my for-loops.<br />
+I am frankly nauseated by the hype train around this stuff.</p>
+<p>Every corporate pitch deck these days seems to think “AI” is a magic solution that must be applied to everything from paper clips to lotion. It’s really not.</p>
+<p>This technology is still immature, it makes mistakes, and it’s not magic fairy dust. As long as you use common sense while using LLM's thare are a useful tool.</p>
+<p>That’s the spirit of this series: not hype, not marketing, but a practical experiment.</p>
 </blockquote>
 <h3 id="part-1-tools-and-setup">Part 1: Tools and Setup</h3>
-<p>This is part one of a two-part series where I document how I built a small <strong>AI-powered assistant</strong> for the Danish <em>Almenlejeloven</em> (Housing Act). You can use these technologies for building RAGs for anything of course.</p>
+<p>I will document how I built a small <em>AI-powered assistant</em> for the Danish <em>Almenlejeloven</em> (Housing Act). You can use these technologies for building RAGs for anything of course.</p>
 <ul>
 <li><strong>Part 1</strong> (this post): Introduces the tools and how to prepare the data.</li>
 <li><strong>Part 2</strong>: Shows how to connect everything into a working Retrieval-Augmented Generation (RAG) system.</li>
 </ul>
 <hr />
 <h2 id="why-build-this">Why Build This?</h2>
-<p>Large Language Models (LLMs) like ChatGPT are powerful, but they have two issues when you want to use them with <strong>your own documents</strong>:</p>
+<p>Large Language Models (LLMs) like ChatGPT are powerful, but they have two issues when you want to use them with your own documents:</p>
 <ol>
 <li><strong>They don’t know your data</strong> – unless it was in their training set, they won’t have access to your exact law, manual, or policy.</li>
-<li><strong>They can hallucinate</strong> – making up answers that sound correct but aren’t.<sup>1</sup></li>
+<li><strong>They can hallucinate</strong> – making up answers that sound correct but aren’t.<sup>Also, stop calling it "Hallucinate"</sup></li>
 </ol>
 <p>To solve this, we need two things:</p>
 <ul>
@@ -102,6 +104,7 @@
 </span><span style="color:#96b5b4;">print</span><span>(resp.</span><span style="color:#bf616a;">json</span><span>()[&quot;</span><span style="color:#a3be8c;">message</span><span>&quot;][&quot;</span><span style="color:#a3be8c;">content</span><span>&quot;])
 </span><span style="color:#65737e;"># -&gt; &quot;The capital of Denmark is Copenhagen.&quot;
 </span></code></pre>
+<p>I have an Nvidia GPU in my machine which let's me utilize CUDA - this speeds up things greatly compared to running an LLM on your CPU. YMMV.</p>
 <hr />
 <h2 id="what-is-chroma">What is Chroma?</h2>
 <p><a href="https://www.trychroma.com/">Chroma</a> is a <strong>vector database</strong>. Instead of storing text as plain strings, it stores <strong>embeddings</strong>: numerical representations of meaning.</p>
@@ -124,7 +127,7 @@
 </span><span style="color:#65737e;"># Create collection
 </span><span>coll = client.</span><span style="color:#bf616a;">get_or_create_collection</span><span>(</span><span style="color:#bf616a;">name</span><span>=&quot;</span><span style="color:#a3be8c;">laws</span><span>&quot;, </span><span style="color:#bf616a;">embedding_function</span><span>=emb_fn)
 </span><span>
-</span><span style="color:#65737e;"># Add some documents
+</span><span style="color:#65737e;"># Add some documents (Paraphrased for brevity)
 </span><span>coll.</span><span style="color:#bf616a;">add</span><span>(
 </span><span>    </span><span style="color:#bf616a;">documents</span><span>=[
 </span><span>        &quot;</span><span style="color:#a3be8c;">§ 86a: Temporary replacement housing must be suitable and in the same municipality.</span><span>&quot;,
@@ -140,18 +143,19 @@
 </span></code></pre>
 <hr />
 <h2 id="preparing-the-danish-housing-act-markdown-chunks">Preparing the Danish Housing Act (Markdown → Chunks)</h2>
-<p>The Danish Housing Act is available online and can be exported to Markdown format. But the raw file is <strong>too big</strong> and messy for our use. We need to:</p>
+<p>The Danish Housing Act is available online and can be exported to Markdown format (You can google sites that convert website content to Markdown). I copied the entire Housing act as markdown and saved it into a file this way.
+However, that file contains way to much text and is too messy for our use. We will need to:</p>
 <ol>
 <li>
-<p><strong>Split by § (sections)</strong>
+<p><strong>Split by § (sections)</strong><br />
 Each paragraph (§1, §2, §3 …) becomes its own file.</p>
 </li>
 <li>
-<p><strong>Clean up Markdown</strong>
+<p><strong>Clean up Markdown</strong><br />
 Remove links, images, ads, and keep only the text.</p>
 </li>
 <li>
-<p><strong>Chunk the text</strong>
+<p><strong>Chunk the text</strong><br />
 Long sections are further split into ~1200-character chunks. This is important because:</p>
 <ul>
 <li>LLMs have context size limits.</li>
@@ -160,7 +164,8 @@ Long sections are further split into ~1200-character chunks. This is important b
 </ul>
 </li>
 </ol>
-<p>Example chunking function in Python:</p>
+<p>For this project we can write some code that helps us split up our "Raw" data.<br />
+Here's an example chunking function in Python:</p>
 <pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span style="color:#b48ead;">import </span><span>re
 </span><span>
 </span><span style="color:#b48ead;">def </span><span style="color:#8fa1b3;">chunk_text</span><span>(</span><span style="color:#bf616a;">text</span><span>, </span><span style="color:#bf616a;">max_chars</span><span>=</span><span style="color:#d08770;">1200</span><span>, </span><span style="color:#bf616a;">overlap</span><span>=</span><span style="color:#d08770;">150</span><span>):
@@ -203,18 +208,8 @@ Long sections are further split into ~1200-character chunks. This is important b
 </span></code></pre>
 <hr />
 <h2 id="diagram-how-it-fits-together">Diagram: How It Fits Together</h2>
-<p>Here’s a simple flow of the system we’re building:</p>
+<p>So far we have produced markdown of the complete housing act. We've then split it up into chunks. Next up we will need to ingest this data into our vector database. When our database is populated we can start work on retrieving data with our LLM. Here’s a simple flow of the system we’re building:</p>
 <p><img src="/images/llm-mermaid.png" alt="img" /></p>
-<hr />
-<h2 id="what-about-markov-chains-are-we-using-that">"What about 'Markov Chains' - are we using that?"</h2>
-<p>Older text generation methods like <strong>Markov chains</strong> only look at the probability of one word following another (Or several using ngrams). They can generate funny sentences, but they have no true understanding of meaning.</p>
-<p>LLMs, by contrast:</p>
-<ul>
-<li>Encode meaning in embeddings.</li>
-<li>Handle long-range dependencies.</li>
-<li>Can answer questions based on provided context.</li>
-</ul>
-<p>So while a Markov chain might generate “The tenant pays rent daily,” only an LLM with context from §86a can generate a correct answer about rehousing obligations.</p>
 <hr />
 <h2 id="to-be-continued-part-2">To be continued (Part 2)</h2>
 <p>In <strong>Part 2</strong>, we’ll connect the dots:</p>
@@ -225,7 +220,7 @@ Long sections are further split into ~1200-character chunks. This is important b
 </ul>
 <p>This turns the raw Housing Act into a <strong>mini legal AI assistant</strong> you can run on your own machine.</p>
 <blockquote>
-<p><sup>1</sup> I hate the term <strong>“hallucinate”</strong> here. Models aren’t taking LSD and seeing pink elephants — they’re just <strong>wrong</strong>. Call it “fabricating”, “lying”, or “predicting nonsense if you squint too hard”. Anything but hallucinating.</p>
+<p><sup>1</sup> I hate the term <strong>“hallucinate”</strong> here. Models aren’t taking LSD and seeing pink elephants — they’re just <strong>wrong</strong>. Call it “fabricating”, “lying”, or “predicting nonsense if you squint too hard”. 🔗 <a href="https://blog.scottlogic.com/2024/09/10/llms-dont-hallucinate.html">Anything but hallucinating</a>.</p>
 </blockquote>
 
 </main>
