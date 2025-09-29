@@ -1,0 +1,21 @@
+::-moz-selection {
+    /* Code for Firefox */
+    color: white;
+    background: red;
+}
+
+::selection {
+    color: white;
+    background: red;
+}
+
+.post-date {
+    color: grey;
+    margin-right: 0.5em;
+    font-size: 0.9em;
+    display: inline-block;
+  }
+  
+p {
+    line-height: 1.5em;
+}
