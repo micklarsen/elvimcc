@@ -5,9 +5,7 @@ draft = false
 taxonomies.categories = ["LLM"]
 +++
 
-# Building an AI Assistant with Python
-
-### Part 2: Getting Answers
+## Part 2: Getting Answers
 
 In [Part 1](../part-1-tools-and-setup/), we:  
 
@@ -15,7 +13,7 @@ In [Part 1](../part-1-tools-and-setup/), we:
 - Installed Chroma to store and search text by meaning.  
 - Split the Danish Housing Act into clean, overlapping **chunks** for easier retrieval.  
 
-Now it’s time to put it all together and actually ask questions.
+Now it’s time to put it all together and actually ask questions. The final project [is on Github](https://github.com/micklarsen/dklovrag)
 
 ---
 
@@ -182,12 +180,12 @@ python ask_minimal.py "Hvad siger § 85 om genhusning?"
 
 And the answer: 
 
-```bash
-[1] kapitel-10/§085/chunk-001.md
-Lejeren har krav på en erstatningsbolig, hvis udlejeren opsiger lejemålet på grund af større ombygning...
+``` python
+"[1] kapitel-10/§085/chunk-001.md"
+"Lejeren har krav på en erstatningsbolig, hvis udlejeren opsiger lejemålet på grund af større ombygning...""
 
-[2] kapitel-10/§086/chunk-001.md
-Kommunalbestyrelsen kan i særlige tilfælde...
+"[2] kapitel-10/§086/chunk-001.md"
+"Kommunalbestyrelsen kan i særlige tilfælde...""
 
 ```
 ---
@@ -236,6 +234,7 @@ Right now, we have a working CLI assistant. Next steps could be:
 * Wrapping this in a **FastAPI** or **Flask** web app.
 * Adding a search interface with highlighting.
 * Expanding with more laws → building a small searchable **legal AI library**.
+* Tweaking the model for more/less sensitivity
 
 ---
 

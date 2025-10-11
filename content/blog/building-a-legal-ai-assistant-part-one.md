@@ -5,35 +5,30 @@ draft = false
 taxonomies.categories = ["LLM"]
 +++
 
-# Building an AI Assistant with Python
-
 > ⚠️ **Disclaimer (read this before you hyperventilate about “AI”)**  
 >  
-> I am *not* an “AI influencer” and I don’t spend my days asking coding assistants to write my for-loops.  
-> I am frankly nauseated by the hype train around this stuff.  
+> I am frankly nauseated by the hype train around "AI".  
 >  
 > Every corporate pitch deck these days seems to think “AI” is a magic solution that must be applied to everything from paper clips to lotion. It’s really not.  
 >  
-> This technology is still immature, it makes mistakes, and it’s not magic fairy dust. As long as you use common sense while using LLM's thare are a useful tool. 
+> This technology is still immature, it makes mistakes, and it’s not magic fairy dust. As long as you use common sense while using LLM's they can be a useful tool. 
 >
-> That’s the spirit of this series: not hype, not marketing, but a practical experiment.  
 
+I've made the code [available on Github here](https://github.com/micklarsen/dklovrag)
 
 ### Part 1: Tools and Setup
 
-I will document how I built a small *AI-powered assistant* for the Danish *Almenlejeloven* (Housing Act). You can use these technologies for building RAGs for anything of course.  
+In this mini-project I will document how I built a small *AI-powered assistant* for the Danish *Almenlejeloven* (Housing Act). You can use these technologies for building RAGs for anything of course. 
 
 - **Part 1** (this post): Introduces the tools and how to prepare the data.  
 - **Part 2**: Shows how to connect everything into a working Retrieval-Augmented Generation (RAG) system.  
-
----
 
 ## Why Build This?
 
 Large Language Models (LLMs) like ChatGPT are powerful, but they have two issues when you want to use them with your own documents:
 
 1. **They don’t know your data** – unless it was in their training set, they won’t have access to your exact law, manual, or policy.  
-2. **They can hallucinate** – making up answers that sound correct but aren’t.<sup>Also, stop calling it "Hallucinate"</sup>
+2. **They can hallucinate** – making up answers that sound correct but aren’t.<sup>Also, please stop calling it "Hallucinate"</sup>
 
 To solve this, we need two things:  
 - A way to **store and search our own text data** by meaning.  
@@ -183,6 +178,8 @@ def chunk_text(text, max_chars=1200, overlap=150):
     return chunks
 
 ```
+
+If you want, you can grab the code I wrote [on Github](https://github.com/micklarsen/dklovrag)
 
 ---
 

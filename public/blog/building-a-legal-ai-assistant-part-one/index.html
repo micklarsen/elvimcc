@@ -45,27 +45,24 @@
     </p>
     
     <div class="space"></div>
-    <h1 id="building-an-ai-assistant-with-python">Building an AI Assistant with Python</h1>
-<blockquote>
+    <blockquote>
 <p>⚠️ <strong>Disclaimer (read this before you hyperventilate about “AI”)</strong></p>
-<p>I am <em>not</em> an “AI influencer” and I don’t spend my days asking coding assistants to write my for-loops.<br />
-I am frankly nauseated by the hype train around this stuff.</p>
+<p>I am frankly nauseated by the hype train around "AI".</p>
 <p>Every corporate pitch deck these days seems to think “AI” is a magic solution that must be applied to everything from paper clips to lotion. It’s really not.</p>
-<p>This technology is still immature, it makes mistakes, and it’s not magic fairy dust. As long as you use common sense while using LLM's thare are a useful tool.</p>
-<p>That’s the spirit of this series: not hype, not marketing, but a practical experiment.</p>
+<p>This technology is still immature, it makes mistakes, and it’s not magic fairy dust. As long as you use common sense while using LLM's they can be a useful tool.</p>
 </blockquote>
+<p>I've made the code <a href="https://github.com/micklarsen/dklovrag">available on Github here</a></p>
 <h3 id="part-1-tools-and-setup">Part 1: Tools and Setup</h3>
-<p>I will document how I built a small <em>AI-powered assistant</em> for the Danish <em>Almenlejeloven</em> (Housing Act). You can use these technologies for building RAGs for anything of course.</p>
+<p>In this mini-project I will document how I built a small <em>AI-powered assistant</em> for the Danish <em>Almenlejeloven</em> (Housing Act). You can use these technologies for building RAGs for anything of course.</p>
 <ul>
 <li><strong>Part 1</strong> (this post): Introduces the tools and how to prepare the data.</li>
 <li><strong>Part 2</strong>: Shows how to connect everything into a working Retrieval-Augmented Generation (RAG) system.</li>
 </ul>
-<hr />
 <h2 id="why-build-this">Why Build This?</h2>
 <p>Large Language Models (LLMs) like ChatGPT are powerful, but they have two issues when you want to use them with your own documents:</p>
 <ol>
 <li><strong>They don’t know your data</strong> – unless it was in their training set, they won’t have access to your exact law, manual, or policy.</li>
-<li><strong>They can hallucinate</strong> – making up answers that sound correct but aren’t.<sup>Also, stop calling it "Hallucinate"</sup></li>
+<li><strong>They can hallucinate</strong> – making up answers that sound correct but aren’t.<sup>Also, please stop calling it "Hallucinate"</sup></li>
 </ol>
 <p>To solve this, we need two things:</p>
 <ul>
@@ -206,6 +203,7 @@ Here's an example chunking function in Python:</p>
 </span><span>    </span><span style="color:#b48ead;">return </span><span>chunks
 </span><span>
 </span></code></pre>
+<p>If you want, you can grab the code I wrote <a href="https://github.com/micklarsen/dklovrag">on Github</a></p>
 <hr />
 <h2 id="diagram-how-it-fits-together">Diagram: How It Fits Together</h2>
 <p>So far we have produced markdown of the complete housing act. We've then split it up into chunks. Next up we will need to ingest this data into our vector database. When our database is populated we can start work on retrieving data with our LLM. Here’s a simple flow of the system we’re building:</p>

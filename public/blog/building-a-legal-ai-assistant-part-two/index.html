@@ -45,15 +45,14 @@
     </p>
     
     <div class="space"></div>
-    <h1 id="building-an-ai-assistant-with-python">Building an AI Assistant with Python</h1>
-<h3 id="part-2-getting-answers">Part 2: Getting Answers</h3>
+    <h2 id="part-2-getting-answers">Part 2: Getting Answers</h2>
 <p>In <a href="../part-1-tools-and-setup/">Part 1</a>, we:</p>
 <ul>
 <li>Installed Ollama to run a language model locally.</li>
 <li>Installed Chroma to store and search text by meaning.</li>
 <li>Split the Danish Housing Act into clean, overlapping <strong>chunks</strong> for easier retrieval.</li>
 </ul>
-<p>Now it’s time to put it all together and actually ask questions.</p>
+<p>Now it’s time to put it all together and actually ask questions. The final project <a href="https://github.com/micklarsen/dklovrag">is on Github</a></p>
 <hr />
 <h2 id="step-1-ingesting-the-law-into-chroma">Step 1: Ingesting the Law into Chroma</h2>
 <p>To populate our vector database we will need some code that can ingest all the chunks of markdown we produced in the last post.
@@ -199,11 +198,11 @@ let's make a script for asking questions - <code>ask.py</code>. The idea is:</p>
 <pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">python</span><span> ask_minimal.py &quot;</span><span style="color:#a3be8c;">Hvad siger § 85 om genhusning?</span><span>&quot;
 </span></code></pre>
 <p>And the answer:</p>
-<pre data-lang="bash" style="background-color:#2b303b;color:#c0c5ce;" class="language-bash "><code class="language-bash" data-lang="bash"><span style="color:#bf616a;">[1]</span><span> kapitel-10/§085/chunk-001.md
-</span><span style="color:#bf616a;">Lejeren</span><span> har krav på en erstatningsbolig, hvis udlejeren opsiger lejemålet på grund af større ombygning...
+<pre data-lang="python" style="background-color:#2b303b;color:#c0c5ce;" class="language-python "><code class="language-python" data-lang="python"><span>&quot;</span><span style="color:#a3be8c;">[1] kapitel-10/§085/chunk-001.md</span><span>&quot;
+</span><span>&quot;</span><span style="color:#a3be8c;">Lejeren har krav på en erstatningsbolig, hvis udlejeren opsiger lejemålet på grund af større ombygning...</span><span>&quot;&quot;</span><span style="background-color:#bf616a;color:#2b303b;">
 </span><span>
-</span><span style="color:#bf616a;">[2]</span><span> kapitel-10/§086/chunk-001.md
-</span><span style="color:#bf616a;">Kommunalbestyrelsen</span><span> kan i særlige tilfælde...
+</span><span>&quot;</span><span style="color:#a3be8c;">[2] kapitel-10/§086/chunk-001.md</span><span>&quot;
+</span><span>&quot;</span><span style="color:#a3be8c;">Kommunalbestyrelsen kan i særlige tilfælde...</span><span>&quot;&quot;</span><span style="background-color:#bf616a;color:#2b303b;">
 </span><span>
 </span></code></pre>
 <hr />
@@ -238,6 +237,7 @@ The model will probably say something <em>plausible</em> about maintenance rules
 <li>Wrapping this in a <strong>FastAPI</strong> or <strong>Flask</strong> web app.</li>
 <li>Adding a search interface with highlighting.</li>
 <li>Expanding with more laws → building a small searchable <strong>legal AI library</strong>.</li>
+<li>Tweaking the model for more/less sensitivity</li>
 </ul>
 <hr />
 <h2 id="final-thoughts">Final Thoughts</h2>
